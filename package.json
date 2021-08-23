@@ -14,5 +14,8 @@
     "express": "^4.17.1",
     "uuid": "^8.3.2",
     "ws": "^8.2.0"
+  },
+  "devDependencies": {
+    "pomelo": "^2.2.7"
   }
 }
