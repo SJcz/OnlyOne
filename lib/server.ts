@@ -1,8 +1,9 @@
-const cluster = require('cluster');
-const os = require('os');
-require('dotenv').config();
+import cluster from 'cluster'
+import os from 'os'
+import dotenv from 'dotenv';
+dotenv.config();
 
-if (cluster.isMaster) {
+if (cluster.isPrimary) {
     const processRoomPropleNum = {}
     const cpus = os.cpus();
     for (let i = 0; i < cpus.length; i++) {

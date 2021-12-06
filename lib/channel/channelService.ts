@@ -1,39 +1,43 @@
+import App from "../app";
+
 class ChannelService {
-    constructor(app) {
+    app: App;
+    channelList: {[channelName: string]: Channel}
+    constructor(app: App) {
         this.app = app;
         this.channelList = {};
     }
 
-    createChannel(name) {
+    createChannel(name: string): Channel {
         if (!this.channelList[name]) {
             this.channelList[name] = new Channel(this, name);
         }
         return this.channelList[name];
     }
 
-    getChannel(name, mk = false) {
+    getChannel(name: string, mk = false): Channel {
         if (mk) return this.createChannel(name);
         return this.channelList[name];
     }
 
-    destroyChannel(name) {
+    destroyChannel(name: string) {
         delete this.channelList[name];
     }
 
-    leave(userId) {
+    leave(userId: string) {
         for (let name in this.channelList) {
             this.channelList[name].leave(userId);
         }
     }
 
-    broadcast(msg) {
+    broadcast(msg: TcpMessage.IPushMessage) {
         for (let name in this.channelList) {
             this.channelList[name].pushMessage(msg);
         }
     }
 
     getAllChannelUserNum() {
-        const map = {};
+        const map: {[name: string]: number} = {};
         for (let name in this.channelList) {
             map[name] = Object.keys(this.channelList[name].getAllUser()).length;
         }
@@ -45,7 +49,11 @@ const ST_INITED = 0;
 const ST_DESTROYED = 1;
 
 class Channel {
-    constructor(channelService, name) {
+    __channelService__: ChannelService;
+    name: string;
+    userList: { [userId: string]: IUser }
+    state: number;
+    constructor(channelService: ChannelService, name: string) {
         this.__channelService__ = channelService;
         this.name = name;
         this.userList = {};
@@ -56,11 +64,11 @@ class Channel {
         return this.userList;
     }
 
-    add(user) {
+    add(user: IUser) {
         this.userList[user.userId] = user;
     }
 
-    leave(userId) {
+    leave(userId: string) {
         delete this.userList[userId];
     }
 
@@ -69,12 +77,8 @@ class Channel {
         this.__channelService__.destroyChannel(this.name);
     }
 
-    /**
-     * 频道内推送消息
-     * msg: { type: 消息类型 push, route: 路由标识, 告诉对方该如何处理这个消息, data: 实际的消息体}
-     * @param {*} msg 
-     */
-    pushMessage(msg) {
+    /**频道内推送消息 */
+    pushMessage(msg: TcpMessage.IPushMessage) {
         msg.type = 'push';
         const sessionList = this.__channelService__.app.get('sessionList');
         const sessions = Object.values(this.userList).map(item => sessionList[item.sessionId]);
@@ -82,6 +86,6 @@ class Channel {
     }
 }
 
-module.exports = (app) => {
+module.exports = (app: App) => {
     return new ChannelService(app);
 }

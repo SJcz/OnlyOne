@@ -1,12 +1,23 @@
-const events = require('events');
-const path = require('path');
-const fs = require('fs');
-const uuid = require('uuid');
-const redisService = require('./redis/redisService');
-const Chance = require('chance');
+import events from 'events';
+import path from 'path';
+import fs from 'fs';
+import uuid from 'uuid';
+import Chance from 'chance';
+
+import redisService from './redis/redisService';
 const chance = new Chance();
 
+interface IHandlers {
+    [handlerName: string]: {
+        methodList: string[]
+    }
+}
+
 class App extends events.EventEmitter {
+    handlers: IHandlers;
+    allRoomPeopleRecord: { [roomId: string]: number }[];
+    channelService: any;
+
     start(opts) {
         opts = opts || {};
         this.handlers = {};
@@ -166,6 +177,6 @@ class App extends events.EventEmitter {
     }
 }
 
-module.exports = App;
+export = App;
 
 
