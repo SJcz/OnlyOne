@@ -4,25 +4,31 @@ import fs from 'fs';
 import uuid from 'uuid';
 import Chance from 'chance';
 
-import redisService from './redis/redisService';
+import redisService, { RedisService } from './redis/redisService';
+import { ChannelService } from './channel/channelService';
+import WSConnector from './connector/ws.connector';
+import WSSession from './connector/ws.session';
 const chance = new Chance();
 
-interface IHandlers {
-    [handlerName: string]: {
-        methodList: string[]
-    }
-}
 
 class App extends events.EventEmitter {
-    handlers: IHandlers;
-    allRoomPeopleRecord: { [roomId: string]: number }[];
-    channelService: any;
+    handlers!: {
+        [handlerName: string]: {
+            methodList: string[];
+        };
+    };
+    allRoomPeopleRecord!: { [roomId: string]: number; }[];
 
-    start(opts) {
+    channelService!: ChannelService;
+    connector!: WSConnector;
+    redisService!: RedisService;
+
+    sessionList!: { [sessionId: string]: WSSession; };
+
+    start(opts: any) {
         opts = opts || {};
         this.handlers = {};
         this.allRoomPeopleRecord = [];
-        this.channelService = null;
         this.connector = this.getScoketConnector(opts);
         this.connector.start(opts);
         this.sessionList = {};
@@ -43,14 +49,15 @@ class App extends events.EventEmitter {
             })
             process.send({
                 type: 'pull',
-                route: 'room.people.num',
+                route: "room.people.num",
                 data: null
             })
         }, 5000);
     }
 
     _initEvents() {
-        this.connector.on('connection', this.handleConnection.bind(this));
+        let a;
+        this.connector.on("connection", this.handleConnection.bind(this));
         this.on('channel', (message) => {
             message = JSON.parse(message);
             if (['room.chat', 'room.join', 'room.leave'].includes(message.route)) {
@@ -171,7 +178,7 @@ class App extends events.EventEmitter {
         return new WSConnector();
     }
 
-    get(key) {
+    get(key: string) {
         if (['channelService', 'sessionList', 'allRoomPeopleRecord'].includes(key)) return this[key];
         throw new Error(`app 不能获取 ${key}`)
     }

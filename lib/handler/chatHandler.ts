@@ -1,9 +1,13 @@
+import App from "../app";
+import WSSession from "../connector/ws.session";
+
 class ChatHandler {
-    constructor(app) {
+    app: App;
+    constructor(app: App) {
         this.app = app;
     }
 
-    chat({ room_id, chat_message }, session) {
+    chat({ room_id, chat_message }, session: WSSession) {
         const channelService = this.app.get('channelService');
         const channel = channelService.getChannel(room_id);
         if (!channel) {

@@ -1,14 +1,15 @@
-const WebSocket = require('ws');
-const WSSession = require('./ws.session');
-const events = require('events');
+import WebSocket from 'ws'
+import events from 'events'
+import WSSession from './ws.session'
 
 let curIndex = 1;
 
-class WSConnector extends events.EventEmitter {
+export default class WSConnector extends events.EventEmitter {
+    wss!: WebSocket.Server;
     constructor() {
         super();
     }
-    start(opts) {
+    start(opts: any) {
         this.wss = new WebSocket.Server({ port: opts.port, maxPayload: 1000 }, () => {
             console.log(`connector process ${process.pid} is running with 'WebSocket:${opts.port}'`)
         });
@@ -16,13 +17,11 @@ class WSConnector extends events.EventEmitter {
     }
 
     _initEvents() {
-        this.wss.on('connection', socket => {
+        this.wss.on('connection', (socket: WebSocket) => {
             const session = new WSSession(curIndex++, socket);
             this.emit('connection', session);
         });
     }
 }
-
-module.exports = WSConnector;
 
 

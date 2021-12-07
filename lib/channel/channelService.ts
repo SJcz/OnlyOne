@@ -1,8 +1,8 @@
 import App from "../app";
 
-class ChannelService {
+export class ChannelService {
     app: App;
-    channelList: {[channelName: string]: Channel}
+    channelList: { [channelName: string]: Channel }
     constructor(app: App) {
         this.app = app;
         this.channelList = {};
@@ -37,7 +37,7 @@ class ChannelService {
     }
 
     getAllChannelUserNum() {
-        const map: {[name: string]: number} = {};
+        const map: { [name: string]: number } = {};
         for (let name in this.channelList) {
             map[name] = Object.keys(this.channelList[name].getAllUser()).length;
         }
@@ -48,7 +48,7 @@ class ChannelService {
 const ST_INITED = 0;
 const ST_DESTROYED = 1;
 
-class Channel {
+export class Channel {
     __channelService__: ChannelService;
     name: string;
     userList: { [userId: string]: IUser }
@@ -65,7 +65,7 @@ class Channel {
     }
 
     add(user: IUser) {
-        this.userList[user.userId] = user;
+        this.userList[user.userId] = user
     }
 
     leave(userId: string) {
@@ -74,18 +74,18 @@ class Channel {
 
     destroy() {
         this.state = ST_DESTROYED;
-        this.__channelService__.destroyChannel(this.name);
+        this.__channelService__.destroyChannel(this.name)
     }
 
     /**频道内推送消息 */
     pushMessage(msg: TcpMessage.IPushMessage) {
         msg.type = 'push';
-        const sessionList = this.__channelService__.app.get('sessionList');
+        const sessionList = this.__channelService__.app.get("sessionList");
         const sessions = Object.values(this.userList).map(item => sessionList[item.sessionId]);
         sessions.forEach(session => session.send(msg)); // 推送消息给用户
     }
 }
 
-module.exports = (app: App) => {
+export default (app: App) => {
     return new ChannelService(app);
 }
