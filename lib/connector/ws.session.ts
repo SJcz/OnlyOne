@@ -25,7 +25,7 @@ export default class WSSession extends events.EventEmitter {
         this.socket.on('error', this.emit.bind(this, 'error'));
     }
 
-    send(msg: string) {
+    send(msg: any) {
         if (this.state !== ST_INITED) return;
         if (typeof msg !== 'string') msg = JSON.stringify(msg);
         this.socket.send(msg);

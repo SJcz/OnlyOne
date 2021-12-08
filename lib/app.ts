@@ -56,7 +56,6 @@ class App extends events.EventEmitter {
     }
 
     _initEvents() {
-        let a;
         this.connector.on("connection", this.handleConnection.bind(this));
         this.on('channel', (message) => {
             message = JSON.parse(message);
@@ -68,9 +67,9 @@ class App extends events.EventEmitter {
     }
 
     _initProcessEvents() {
-        process.on('message', message => {
+        process.on('message', (message: ProcessMessage.IBasicMessage) => {
             if (message.type == 'push') {
-                if (message.route == 'room.people.num') {
+                if ((<ProcessMessage.IPushMessage>message).route == 'room.people.num') {
                     this.allRoomPeopleRecord = message.data;
                 }
             }
@@ -88,17 +87,17 @@ class App extends events.EventEmitter {
         this.channelService = channelServiceObj(this);
     }
 
-    _scanHandlerFolder() {
+    _scanHandlerFolder(): string[] {
         const dirPath = path.join(process.cwd(), './lib/handler');
         const files = fs.readdirSync(dirPath);
         return files.map(file => {
             const filePath = path.resolve(dirPath, file);
             const stats = fs.statSync(filePath);
             if (stats.isFile() && /\.(js)|(jsx)/.test(path.extname(file))) return filePath;
-        }).filter(file => !!file);
+        }).filter(file => !!file) as string[];
     }
 
-    _generateHandlerMethodMap(scanFiles) {
+    _generateHandlerMethodMap(scanFiles: string[]) {
         if (scanFiles.length === 0) {
             console.warn('there is no any handler file provide');
         }
@@ -123,7 +122,7 @@ class App extends events.EventEmitter {
         }
     }
 
-    handleConnection(session) {
+    handleConnection(session: WSSession) {
         this.sessionList[session.id] = session;
         // 因为不需要登录, 所以连接上直接给一个用户Id
         const userId = uuid.v4();
@@ -146,10 +145,10 @@ class App extends events.EventEmitter {
     }
 
     // msg { route, data, requestId }
-    async handleMessage(session, msg) {
+    async handleMessage(session: WSSession, msg: TcpMessage.IRequestMessage) {
         console.log(`收到 ${session.userId} 的消息: ${JSON.stringify(msg)}`);
         if (!msg.route) {
-            console.log(`消息 route=${route} 路由无效, 未知消息不处理`);
+            console.log(`消息 route=${msg.route} 路由无效, 未知消息不处理`);
             if (msg.type === 'request') session.send({ type: 'response', code: 501, data: '服务器收到未知消息', requestId: msg.requestId });
             return;
         }
@@ -168,7 +167,7 @@ class App extends events.EventEmitter {
         }
     }
 
-    getScoketConnector(opts) {
+    getScoketConnector(opts: any) {
         if (!opts.connector) return this._getDetaultScocketConnector();
         return this._getDetaultScocketConnector();
     }
@@ -179,8 +178,16 @@ class App extends events.EventEmitter {
     }
 
     get(key: string) {
-        if (['channelService', 'sessionList', 'allRoomPeopleRecord'].includes(key)) return this[key];
-        throw new Error(`app 不能获取 ${key}`)
+        switch (key) {
+            case 'channelService':
+                return this.channelService;
+            case 'sessionList':
+                return this.sessionList;
+            case 'allRoomPeopleRecord':
+                return this.allRoomPeopleRecord;
+            default:
+                throw new Error(`app 不能获取 ${key}`)
+        }
     }
 }
 
