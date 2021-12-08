@@ -1,4 +1,6 @@
 import App from "../app";
+import WSSession from "../connector/ws.session";
+import { IChannelUser, IPushMessage } from "../define/interface/common";
 
 export class ChannelService {
     app: App;
@@ -25,20 +27,20 @@ export class ChannelService {
     }
 
     leave(userId: string) {
-        for (let name in this.channelList) {
+        for (const name in this.channelList) {
             this.channelList[name].leave(userId);
         }
     }
 
-    broadcast(msg: TcpMessage.IPushMessage) {
-        for (let name in this.channelList) {
+    broadcast(msg: IPushMessage) {
+        for (const name in this.channelList) {
             this.channelList[name].pushMessage(msg);
         }
     }
 
     getAllChannelUserNum() {
         const map: { [name: string]: number } = {};
-        for (let name in this.channelList) {
+        for (const name in this.channelList) {
             map[name] = Object.keys(this.channelList[name].getAllUser()).length;
         }
         return map;
@@ -51,7 +53,7 @@ const ST_DESTROYED = 1;
 export class Channel {
     __channelService__: ChannelService;
     name: string;
-    userList: { [userId: string]: IUser }
+    userList: { [userId: string]: IChannelUser }
     state: number;
     constructor(channelService: ChannelService, name: string) {
         this.__channelService__ = channelService;
@@ -64,8 +66,8 @@ export class Channel {
         return this.userList;
     }
 
-    add(user: IUser) {
-        this.userList[user.userId] = user
+    add(user: IChannelUser) {
+        this.userList[user.userId] = user;
     }
 
     leave(userId: string) {
@@ -78,9 +80,9 @@ export class Channel {
     }
 
     /**频道内推送消息 */
-    pushMessage(msg: TcpMessage.IPushMessage) {
+    pushMessage(msg: IPushMessage) {
         msg.type = 'push';
-        const sessionList = this.__channelService__.app.get("sessionList");
+        const sessionList = this.__channelService__.app.get('sessionList') as { [sessionId: string]: WSSession };
         const sessions = Object.values(this.userList).map(item => sessionList[item.sessionId]);
         sessions.forEach(session => session.send(msg)); // 推送消息给用户
     }

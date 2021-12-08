@@ -1,6 +1,7 @@
 import WebSocket from 'ws'
 import events from 'events'
 import WSSession from './ws.session'
+import { IStartOptions } from '../define/interface/common';
 
 let curIndex = 1;
 
@@ -9,7 +10,7 @@ export default class WSConnector extends events.EventEmitter {
     constructor() {
         super();
     }
-    start(opts: any) {
+    start(opts: IStartOptions) {
         this.wss = new WebSocket.Server({ port: opts.port, maxPayload: 1000 }, () => {
             console.log(`connector process ${process.pid} is running with 'WebSocket:${opts.port}'`)
         });

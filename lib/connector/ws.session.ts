@@ -1,5 +1,6 @@
 import events from 'events'
 import WebSocket from 'ws'
+import { IBasicMessage, IUser } from '../define/interface/common';
 
 const ST_INITED = 0;
 const ST_CLOSED = 1;
@@ -8,12 +9,15 @@ export default class WSSession extends events.EventEmitter {
     id: number;
     socket: WebSocket;
     state: number;
-    [property: string]: any;
+
+    map: Map<string, any>;
+
     constructor(id: number, socket: WebSocket) {
         super();
         this.id = id;
         this.socket = socket;
         this.state = ST_INITED;
+        this.map = new Map();
         this._initEvents();
     }
 
@@ -25,14 +29,26 @@ export default class WSSession extends events.EventEmitter {
         this.socket.on('error', this.emit.bind(this, 'error'));
     }
 
-    send(msg: any) {
+    send(msg: IBasicMessage | string) {
         if (this.state !== ST_INITED) return;
         if (typeof msg !== 'string') msg = JSON.stringify(msg);
         this.socket.send(msg);
     }
 
-    set(key: string, value: any) {
-        this[key] = value;
+    set(key: string, value: unknown) {
+        this.map.set(key, value);
+    }
+
+    get<T>(key: string): T {
+        return this.map.get(key) as T;
+    }
+
+    get userId(): string {
+        return this.map.get('userId');
+    }
+
+    get user(): IUser {
+        return this.map.get('user');
     }
 }
 

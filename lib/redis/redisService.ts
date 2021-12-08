@@ -2,6 +2,7 @@ import App from "../app";
 
 import redis from 'redis';
 import { promisify } from 'util';
+import { IRedisChannelMessage } from "../define/interface/common";
 
 export class RedisService {
     app: App;
@@ -28,7 +29,7 @@ export class RedisService {
 
     _initEvents() {
         this.subscriber.subscribe('channel');
-        this.subscriber.on('message', (category, message) => {
+        this.subscriber.on('message', (category: string, message: IRedisChannelMessage) => {
             if (category === 'channel') this.app.emit('channel', message);
         });
         this.subscriber.on('error', (error) => {
@@ -36,8 +37,8 @@ export class RedisService {
         })
     }
 
-    publish(channel: string, msg: any) {
-        this.publisher.publish(channel, JSON.stringify(msg));
+    publish(category: string, msg: IRedisChannelMessage) {
+        this.publisher.publish(category, JSON.stringify(msg));
     }
 }
 

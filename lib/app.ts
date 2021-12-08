@@ -5,30 +5,39 @@ import uuid from 'uuid';
 import Chance from 'chance';
 
 import redisService, { RedisService } from './redis/redisService';
-import { ChannelService } from './channel/channelService';
+import channelService, { ChannelService } from './channel/channelService';
 import WSConnector from './connector/ws.connector';
 import WSSession from './connector/ws.session';
+import { IBasicMessage, IPushMessage, IRedisChannelMessage, IRequestMessage, IStartOptions, IUser } from './define/interface/common';
+import { ProcessMessageRoute, RedisMessageRoute } from './define/interface/constant';
 const chance = new Chance();
+
+interface IHandlerMap {
+    [handlerName: string]: {
+        // eslint-disable-next-line @typescript-eslint/ban-types
+        [method: string]: Function;
+    } & {
+        filePath: string,
+        methodList: string[],
+        name: string,
+    }
+}
 
 
 class App extends events.EventEmitter {
-    handlers!: {
-        [handlerName: string]: {
-            methodList: string[];
-        };
-    };
-    allRoomPeopleRecord!: { [roomId: string]: number; }[];
+    handlers!: IHandlerMap;
+    allRoomUserNum!: { [roomId: string]: number };
 
     channelService!: ChannelService;
     connector!: WSConnector;
     redisService!: RedisService;
 
-    sessionList!: { [sessionId: string]: WSSession; };
+    sessionList!: { [sessionId: string]: WSSession };
 
-    start(opts: any) {
+    start(opts: IStartOptions) {
         opts = opts || {};
         this.handlers = {};
-        this.allRoomPeopleRecord = [];
+        this.allRoomUserNum = {};
         this.connector = this.getScoketConnector(opts);
         this.connector.start(opts);
         this.sessionList = {};
@@ -42,35 +51,36 @@ class App extends events.EventEmitter {
             const memoryUsage = process.memoryUsage();
             const [heapTotal, heapUsed, rss] = [Math.trunc(memoryUsage.heapTotal / 1024 / 1024), Math.trunc(memoryUsage.heapUsed / 1024 / 1024), Math.trunc(memoryUsage.rss / 1024 / 1024)]
             console.log(`进程 ${process.pid} 当前维持了 ${userIds.length} 个连接, 当前申请内存=${heapTotal} M  使用内存=${heapUsed} M , rss =${rss} M`);
-            process.send({
-                type: 'push',
-                route: 'room.people.num.report',
-                data: this.channelService.getAllChannelUserNum()
-            })
-            process.send({
-                type: 'pull',
-                route: "room.people.num",
-                data: null
-            })
+            if (process.send) {
+                process.send({
+                    type: 'push',
+                    route: ProcessMessageRoute.OOM_PEOPLE_NUM_REPORT,
+                    data: this.channelService.getAllChannelUserNum()
+                })
+                process.send({
+                    type: 'pull',
+                    route: ProcessMessageRoute.ROOM_PEOPLE_NUM,
+                    data: null
+                })
+            }
         }, 5000);
     }
 
     _initEvents() {
         this.connector.on("connection", this.handleConnection.bind(this));
-        this.on('channel', (message) => {
-            message = JSON.parse(message);
-            if (['room.chat', 'room.join', 'room.leave'].includes(message.route)) {
+        this.on('channel', (message: IRedisChannelMessage) => {
+            if ([RedisMessageRoute.ROOM_CHAT, RedisMessageRoute.ROOM_JOIN, RedisMessageRoute.ROOM_LEAVE].includes(message.route as RedisMessageRoute)) {
                 const channel = this.channelService.getChannel(message.data.room_id);
-                if (channel) channel.pushMessage(message);
+                if (channel) channel.pushMessage(<IPushMessage>message);
             }
         });
     }
 
     _initProcessEvents() {
-        process.on('message', (message: ProcessMessage.IBasicMessage) => {
+        process.on('message', (message: IBasicMessage) => {
             if (message.type == 'push') {
-                if ((<ProcessMessage.IPushMessage>message).route == 'room.people.num') {
-                    this.allRoomPeopleRecord = message.data;
+                if ((<IPushMessage>message).route == ProcessMessageRoute.ROOM_PEOPLE_NUM) {
+                    this.allRoomUserNum = <{ [roomId: string]: number }>message.data;
                 }
             }
         });
@@ -82,9 +92,7 @@ class App extends events.EventEmitter {
     }
 
     _initChannelService() {
-        const channelServiceObj = require('./channel/channelService');
-        if (typeof channelServiceObj !== 'function') return;
-        this.channelService = channelServiceObj(this);
+        this.channelService = channelService(this);
     }
 
     _scanHandlerFolder(): string[] {
@@ -101,9 +109,10 @@ class App extends events.EventEmitter {
         if (scanFiles.length === 0) {
             console.warn('there is no any handler file provide');
         }
-        for (let filePath of scanFiles) {
+        for (const filePath of scanFiles) {
             const handlerName = path.basename(filePath).replace(/\.(js)|(jsx)$/, '');
 
+            // eslint-disable-next-line @typescript-eslint/no-var-requires
             let handlerObj = require(filePath);
             if (typeof handlerObj !== 'function') continue;
             handlerObj = handlerObj(this);
@@ -114,7 +123,7 @@ class App extends events.EventEmitter {
             });
             this.handlers[handlerName] = handlerObj;
 
-            for (let methodName in handlerObj) {
+            for (const methodName in handlerObj) {
                 if (typeof handlerObj[methodName] === 'function') {
                     this.handlers[handlerName].methodList.push(methodName);
                 }
@@ -125,8 +134,8 @@ class App extends events.EventEmitter {
     handleConnection(session: WSSession) {
         this.sessionList[session.id] = session;
         // 因为不需要登录, 所以连接上直接给一个用户Id
-        const userId = uuid.v4();
-        const user = {
+        const userId = uuid.v1();
+        const user: IUser = {
             userId,
             avatar: chance.avatar(),
             username: chance.name()
@@ -141,50 +150,48 @@ class App extends events.EventEmitter {
             delete this.sessionList[session.id];
             this.channelService.leave(session.userId);
         });
-        // console.log(`${userId} 连接到进程 ${process.pid}`);
     }
 
     // msg { route, data, requestId }
-    async handleMessage(session: WSSession, msg: TcpMessage.IRequestMessage) {
+    async handleMessage(session: WSSession, msg: IRequestMessage) {
         console.log(`收到 ${session.userId} 的消息: ${JSON.stringify(msg)}`);
         if (!msg.route) {
             console.log(`消息 route=${msg.route} 路由无效, 未知消息不处理`);
-            if (msg.type === 'request') session.send({ type: 'response', code: 501, data: '服务器收到未知消息', requestId: msg.requestId });
+            if (msg.type === 'request') session.send(<IBasicMessage>{ type: 'response', code: 501, data: '服务器收到未知消息', requestId: msg.requestId });
             return;
         }
         const [handlerName, method] = msg.route.split('.');
         if (!this.handlers[handlerName] || typeof this.handlers[handlerName][method] !== 'function') {
             console.log(`找不到 handlerName=${handlerName} method=${method} 来处理该消息`);
-            if (msg.type === 'request') session.send({ type: 'response', code: 404, data: '找不到对应的 handler', requestId: msg.requestId });
+            if (msg.type === 'request') session.send(<IBasicMessage>{ type: 'response', code: 404, data: '找不到对应的 handler', requestId: msg.requestId });
             return;
         }
         try {
             const result = await this.handlers[handlerName][method](msg.data || {}, session);
-            if (msg.type == 'request') return session.send({ type: 'response', code: 0, data: result, requestId: msg.requestId });
+            if (msg.type == 'request') return session.send(<IBasicMessage>{ type: 'response', code: 0, data: result, requestId: msg.requestId });
         } catch (err) {
             console.error(err);
-            if (msg.type == 'request') return session.send({ type: 'response', code: 500, data: '服务器错误', requestId: msg.requestId });
+            if (msg.type == 'request') return session.send(<IBasicMessage>{ type: 'response', code: 500, data: '服务器错误', requestId: msg.requestId });
         }
     }
 
-    getScoketConnector(opts: any) {
+    getScoketConnector(opts: IStartOptions) {
         if (!opts.connector) return this._getDetaultScocketConnector();
         return this._getDetaultScocketConnector();
     }
 
     _getDetaultScocketConnector() {
-        const WSConnector = require('./connector/ws.connector');
         return new WSConnector();
     }
 
-    get(key: string) {
+    get(key: 'channelService' | 'sessionList' | 'allRoomUserNum') {
         switch (key) {
             case 'channelService':
                 return this.channelService;
             case 'sessionList':
                 return this.sessionList;
-            case 'allRoomPeopleRecord':
-                return this.allRoomPeopleRecord;
+            case 'allRoomUserNum':
+                return this.allRoomUserNum;
             default:
                 throw new Error(`app 不能获取 ${key}`)
         }

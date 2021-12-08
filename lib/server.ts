@@ -2,46 +2,45 @@ import cluster from 'cluster'
 import os from 'os'
 import dotenv from 'dotenv';
 import App from './app';
+import { IBasicMessage, IPushMessage, IRequestMessage, IRoomUserNum } from './define/interface/common';
+import { ProcessMessageRoute } from './define/interface/constant';
 dotenv.config();
 
-interface IProcessRoomPeopleNum {
-    [pid: number]: {
-        [name: string]: number
-    }
+interface IProcessRoomUserNum {
+    [pid: number]: IRoomUserNum
 }
 
+
 if (cluster.isPrimary) {
-    const processRoomPropleNum: IProcessRoomPeopleNum = {}
+    const processRoomPropleNum: IProcessRoomUserNum = {}
     const cpus = os.cpus();
     for (let i = 0; i < cpus.length; i++) {
         const worker = cluster.fork();
         if (worker.process.pid) processRoomPropleNum[worker.process.pid] = {};
-        worker.on('message', (message) => {
+        worker.on('message', (message: IBasicMessage) => {
             if (message.type == 'push') {
-                if (message.route == 'room.people.num.report') {
-                    for (let name in message.data) {
+                if ((<IPushMessage>message).route == ProcessMessageRoute.OOM_PEOPLE_NUM_REPORT) {
+                    for (const name in <IRoomUserNum>message.data) {
                         if (worker.process.pid) {
-                            processRoomPropleNum[worker.process.pid][name] = message.data[name] || 0;
+                            processRoomPropleNum[worker.process.pid][name] = (<IRoomUserNum>message.data)[name] || 0;
                         }
-                        
                     }
                 }
             }
             if (message.type == 'pull') {
-                if (message.route == 'room.people.num') {
+                if ((<IPushMessage>message).route == ProcessMessageRoute.ROOM_PEOPLE_NUM) {
                     worker.send({
                         type: 'push',
-                        route: 'room.people.num',
-                        data: Object.values(processRoomPropleNum)
+                        route: ProcessMessageRoute.ROOM_PEOPLE_NUM,
+                        data: mergeRoomPeopleNum(Object.values(processRoomPropleNum))
                     });
                 }
             }
             if (message.type == 'request') {
-                if (message.route == 'room.people.num') {
-                    worker.process
+                if ((<IRequestMessage>message).route == ProcessMessageRoute.ROOM_PEOPLE_NUM) {
                     worker.send({
                         type: 'push',
-                        route: 'room.people.num',
+                        route: ProcessMessageRoute.ROOM_PEOPLE_NUM,
                         data: Object.values(processRoomPropleNum)
                     });
                 }
@@ -49,6 +48,17 @@ if (cluster.isPrimary) {
         });
     }
 } else {
-    new App().start({ port: process.env.WS_PORT || 9090 });
+    new App().start({ port: Number(process.env.WS_PORT) || 9090 });
+}
+
+function mergeRoomPeopleNum(objArr: IRoomUserNum[]): IRoomUserNum {
+    const returnObj: IRoomUserNum = {};
+    for (const obj of objArr) {
+        for (const key in obj) {
+            if (!returnObj[key]) returnObj[key] = 0;
+            returnObj[key] += obj[key];
+        }
+    }
+    return returnObj;
 }
 
