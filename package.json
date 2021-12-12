@@ -4,12 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "tsc",
+    "start": "node ./build/server",
+    "prestart": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@types/node": "^16.7.1",
+    "@types/node": "^10.16.1",
     "@types/ws": "^7.4.7",
     "chance": "^1.1.8",
     "dotenv": "^10.0.0",

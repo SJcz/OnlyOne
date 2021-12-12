@@ -15,6 +15,21 @@ export interface IStartOptions {
     connector?: string;
 }
 
+/**扫描 handler 文件夹生成的配置信息 */
+export interface IHandlerMap {
+    [handlerName: string]: {
+        // eslint-disable-next-line @typescript-eslint/ban-types
+        [method: string]: Function;
+    } & {
+        /**handler 文件路径 */
+        filePath: string,
+        /**handler 文件单例的方法列表 */
+        methodList: string[],
+        /**handler 文件的名字 */
+        name: string,
+    }
+}
+
 export interface IBasicMessage {
     type: string;
     data: unknown;
@@ -34,6 +49,7 @@ export interface IResponseMessage extends IBasicMessage {
 }
 
 export interface IRedisChannelMessage {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any;
     route: string;
 }
@@ -47,7 +63,7 @@ export interface IRoomUserNum {
 export interface IRoomMessage {
     room_id: string;
     sender: {
-        user_id: string;
+        userId: string;
         avatar: string;
     }
     chat_message: {
@@ -55,7 +71,7 @@ export interface IRoomMessage {
         path?: string;
         content?: string;
     }
-    sent_time: number;
+    send_time: number;
 }
 
 

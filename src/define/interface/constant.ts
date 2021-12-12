@@ -8,5 +8,5 @@ export const enum RedisMessageRoute {
 /**进程间消息路由枚举 */
 export const enum ProcessMessageRoute {
     ROOM_PEOPLE_NUM = 'room.people.num',
-    OOM_PEOPLE_NUM_REPORT = 'room.people.num.report'
+    ROOM_PEOPLE_NUM_REPORT = 'room.people.num.report'
 }
