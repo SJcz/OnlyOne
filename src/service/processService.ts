@@ -34,10 +34,21 @@ export class ProcessService {
 				}
 			}
 		})
+
+		process.on('disconnect', () => {
+			console.error(`子进程 process=${process.pid} 跟父进程断开 IPC 通道`)
+			this.app.connector.close(() => {
+				process.exit(-1)
+			})
+		})
+
+		process.on('exit', (code: number) => {
+			console.error(`子进程 process=${process.pid} 退出 code=${code}`)
+		})
 	}
 
 	initProcessInterval() {
-		setInterval(this._recordProcessMemory.bind(this), 25000)
+		setInterval(this._recordProcessMemory.bind(this), 20000)
 		setInterval(() => {
 			if (process.send) {
 				process.send({

@@ -39,6 +39,13 @@ class Master {
 		worker.on('error', (error: Error) => {
 			console.log(`worker ${worker.id}, process ${worker.process.pid} error`)
 			console.error(error)
+			delete this.workers[worker.id]
+			this.createWorker()
+		})
+		worker.on('disconnect', () => {
+			console.log(`worker ${worker.id}, process ${worker.process.pid} disconnect`)
+			delete this.workers[worker.id]
+			this.createWorker()
 		})
 		worker.on('message', (message: IBasicMessage) => {
 			if (message.type == 'push') {

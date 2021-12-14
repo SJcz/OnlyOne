@@ -8,6 +8,7 @@ import { RedisMessageRoute } from './define/interface/constant'
 import initChannelService, { ChannelService } from './service/channelService'
 import initRedisService, { RedisService } from './service/redisService'
 import AppUtil from './util/appUtil'
+import initProcessService, { ProcessService } from './service/processService'
 
 const chance = new Chance()
 
@@ -16,6 +17,7 @@ class App extends events.EventEmitter {
 	channelService!: ChannelService;
 	connector!: WSConnector;
 	redisService!: RedisService;
+	processService!: ProcessService
 
 	clientSessionList!: { [sessionId: string]: WSSession };
 
@@ -25,6 +27,8 @@ class App extends events.EventEmitter {
 		this.connector.start(opts)
 
 		this.clientSessionList = {}
+
+		this.processService = initProcessService(this)
 		this.redisService = initRedisService(this)
 		this.channelService = initChannelService(this)
 

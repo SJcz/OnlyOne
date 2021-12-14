@@ -23,6 +23,10 @@ export default class WSConnector extends events.EventEmitter {
 			this.emit('connection', session)
 		})
 	}
+
+	close(cb?: () => void) {
+		this.wss && this.wss.close(cb)
+	}
 }
 
 
