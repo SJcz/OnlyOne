@@ -1,5 +1,5 @@
 import App from '../app'
-import { IBasicMessage, IPushMessage, IRoomUserNum } from '../define/interface/common'
+import { IBasicMessage, IPushMessage, IRequestMessage, IRoomUserNum } from '../define/interface/common'
 import { ProcessMessageRoute } from '../define/interface/constant'
 import roomManager from '../manager/roomManager'
 
@@ -48,7 +48,7 @@ export class ProcessService {
 	}
 
 	initProcessInterval() {
-		setInterval(this._recordProcessMemory.bind(this), 20000)
+		setInterval(this._recordProcessMemory.bind(this), 30000)
 		setInterval(() => {
 			if (process.send) {
 				process.send({
@@ -80,6 +80,23 @@ export class ProcessService {
 		Object.assign(this.memory, { heapTotal, heapUsed, rss })
 		console.log(`进程 ${process.pid} 当前维持了 ${userIds.length} 个连接, 当前申请内存=${heapTotal} M  使用内存=${heapUsed} M , rss =${rss} M`)
 	}
+
+	// requestMainProcess(msg: IRequestMessage) {
+	// 	msg.requestId = ++this.requestIndex
+	// 	msg.type = 'request'
+	// 	const promise = new Promise((resolve, reject) => {
+	// 		this.pendingRequest[msg.requestId] = {
+	// 			_resolve: resolve,
+	// 			_reject: reject
+	// 		}
+	// 	})
+	// 	if (process.send) {
+	// 		process.send(msg)
+	// 	} else {
+	// 		throw new Error('process.send is not a function')	
+	// 	}
+	// 	return promise
+	// }
 }
 
 export default function initProcessService(app: App) {

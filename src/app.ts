@@ -9,6 +9,7 @@ import initChannelService, { ChannelService } from './service/channelService'
 import initRedisService, { RedisService } from './service/redisService'
 import AppUtil from './util/appUtil'
 import initProcessService, { ProcessService } from './service/processService'
+import { getRandomAvatar } from './util/util'
 
 const chance = new Chance()
 
@@ -47,14 +48,15 @@ class App extends events.EventEmitter {
 		})
 	}
 
-	handleConnection(session: WSSession) {
+	async handleConnection(session: WSSession) {
 		this.clientSessionList[session.id] = session
 		// 因为不需要登录, 所以连接上直接给一个用户Id
 		const userId = v1()
 		const user: IUser = {
 			userId,
-			avatar: chance.avatar(),
-			username: chance.name()
+			avatar: await getRandomAvatar(),
+			username: chance.name(),
+			register_time: Date.now()
 		}
 		session.set('userId', userId)
 		session.set('user', user)
@@ -71,7 +73,7 @@ class App extends events.EventEmitter {
 		})
 	}
 
-	// msg { route, data, requestId }
+	/**处理客户端的请求消息 */
 	async handleClientMessage(session: WSSession, msg: IRequestMessage) {
 		console.log(`收到 ${session.userId} 的消息: ${JSON.stringify(msg)}`)
 		if (!msg.route) {

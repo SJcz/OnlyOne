@@ -2,10 +2,11 @@ export interface IUser {
     userId: string;
     avatar: string;
     username: string;
+    /**注册时间 */
+    register_time: number;
 }
 
-export interface IChannelUser {
-    userId: string;
+export interface IChannelUser extends IUser {
     sessionId: string | number;
 }
 

@@ -10,3 +10,6 @@ export const enum ProcessMessageRoute {
     ROOM_PEOPLE_NUM = 'room.people.num',
     ROOM_PEOPLE_NUM_REPORT = 'room.people.num.report'
 }
+
+/**头像文件存放的基础文件夹, Dockerfile 中也是指定该文件夹 */
+export const AVATAR_BASE_FOLDER = '/src/app/avatars'

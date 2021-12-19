@@ -23,7 +23,7 @@ export default class WSSession extends events.EventEmitter {
 	}
 
 	_initEvents() {
-		this.socket.on('message', (message) => {
+		this.socket.on('message', (message: Buffer | string) => {
 			this.emit('message', JSON.parse(message.toString()))
 		})
 		this.socket.on('close', this.emit.bind(this, 'close'))

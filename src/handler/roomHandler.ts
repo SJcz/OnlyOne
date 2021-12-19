@@ -17,7 +17,7 @@ class RoomHandler {
 		if (room_id !== 'onlyOne') throw new Error('只能进入 onlyOne 房间')
 		const channelService = this.app.get('channelService') as ChannelService
 		const channel = channelService.getChannel(room_id, true)
-		channel.add({ userId: session.userId, sessionId: session.id })
+		channel.add({ ...session.user, sessionId: session.id })
 		this.app.redisService.publish('channel', { route: RedisMessageRoute.ROOM_JOIN, data: { room_id, user: session.user } })
 		return { room_id, user: session.user }
 	}
@@ -43,7 +43,6 @@ interface IJoinRoomRequestBody {
 interface ILeaveRoomRequestBody {
 	room_id: string;
 }
-
 
 interface IGetRoomAllUserNumRequestBody {
 	room_id: string;

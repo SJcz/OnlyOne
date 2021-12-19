@@ -9,6 +9,10 @@ COPY . /src/app/
 
 RUN npm config set registry https://registry.npm.taobao.org && npm i
 
+# 头像文件夹
+VOLUME /src/app/avatars
+
 EXPOSE 9090
+EXPOSE 10010
 
 CMD ["npm", "run", "start"]

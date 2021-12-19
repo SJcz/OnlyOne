@@ -11,7 +11,7 @@ export default class WSConnector extends events.EventEmitter {
 		super()
 	}
 	start(opts: IStartOptions) {
-		this.wss = new WebSocket.Server({ port: opts.port, maxPayload: 1000 }, () => {
+		this.wss = new WebSocket.Server({ port: opts.port, maxPayload: 10 * 1024 }, () => {
 			console.log(`connector process ${process.pid} is running with 'WebSocket:${opts.port}'`)
 		})
 		this._initEvents()

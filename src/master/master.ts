@@ -3,14 +3,17 @@ import os from 'os'
 import { IBasicMessage, IPushMessage, IRoomUserNum } from '../define/interface/common'
 import { ProcessMessageRoute } from '../define/interface/constant'
 import roomManager from '../manager/roomManager'
+import HttpServer from './http-server'
 
 class Master {
 	workers!: { [id: number]: Worker }
+	httpServer!: HttpServer
 
 	start() {
 		this.workers = {}
 		this.initProcessEvent()
 		this.startAllWorkers()
+		this.startHttpServer()
 	}
 
 	initProcessEvent() {
@@ -70,6 +73,11 @@ class Master {
 		console.log(`create worker ${worker.id}, process ${worker.process.pid} successfully!`)
 	}
 
+	startHttpServer() {
+		this.httpServer = new HttpServer()
+		this.httpServer.start()
+	}
+
 	handlerPushMessage_ROOM_PEOPLE_NUM_REPORT(pid: number, message: IPushMessage) {
 		roomManager.updateProcessRoomUserNum(pid, <IRoomUserNum>message.data)
 	}
@@ -77,6 +85,20 @@ class Master {
 	handlerPushMessage_NO_MATCH(pid: number, message: IPushMessage) {
 		console.error(`主进程 收到无法处理的子进程消息, route=${message.route}， 子进程PID=${pid}`)
 	}
+
+	// requestChildProcess(worker: Worker, msg: IRequestMessage) {
+	// 	msg.requestId = ++this.requestIndex
+	// 	msg.type = 'request'
+	// 	const promise = new Promise((resolve, reject) => {
+	// 		this.pendingRequest[msg.requestId] = {
+	// 			_worker: worker,
+	// 			_resolve: resolve,
+	// 			_reject: reject
+	// 		}
+	// 	})
+	// 	worker.send(msg)
+	// 	return promise
+	// }
 }
 
 export default Master
