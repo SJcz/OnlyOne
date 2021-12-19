@@ -6,11 +6,9 @@ import roomManager from '../manager/roomManager'
 import HttpServer from './http-server'
 
 class Master {
-	workers!: { [id: number]: Worker }
 	httpServer!: HttpServer
 
 	start() {
-		this.workers = {}
 		this.initProcessEvent()
 		this.startAllWorkers()
 		this.startHttpServer()
@@ -18,15 +16,15 @@ class Master {
 
 	initProcessEvent() {
 		process.on('exit', () => {
-			for (const id in this.workers) {
-				this.workers[id].kill()
+			for (const id in cluster.workers) {
+				cluster.workers[id] && (<Worker>cluster.workers[id]).kill()
 			}
 		})
 	}
 
 	startAllWorkers() {
 		const cpus = os.cpus()
-		const minWorkerNum = cpus.length - 2 <= 1 ? 1 : cpus.length - 2
+		const minWorkerNum = cpus.length - 1 <= 1 ? 1 : cpus.length - 1
 		for (let i = 0; i < minWorkerNum; i++) {
 			this.createWorker()
 		}
@@ -36,18 +34,18 @@ class Master {
 		const worker = cluster.fork()
 		worker.on('exit', (code: number, signal: string) => {
 			console.log(`worker ${worker.id}, process ${worker.process.pid} exit. code=${code} signal=${signal}`)
-			delete this.workers[worker.id]
+			delete cluster.workers[worker.id]
 			this.createWorker()
 		})
 		worker.on('error', (error: Error) => {
 			console.log(`worker ${worker.id}, process ${worker.process.pid} error`)
 			console.error(error)
-			delete this.workers[worker.id]
+			delete cluster.workers[worker.id]
 			this.createWorker()
 		})
 		worker.on('disconnect', () => {
 			console.log(`worker ${worker.id}, process ${worker.process.pid} disconnect`)
-			delete this.workers[worker.id]
+			delete cluster.workers[worker.id]
 			this.createWorker()
 		})
 		worker.on('message', (message: IBasicMessage) => {
@@ -69,7 +67,6 @@ class Master {
 				}
 			}
 		})
-		this.workers[worker.id] = worker
 		console.log(`create worker ${worker.id}, process ${worker.process.pid} successfully!`)
 	}
 

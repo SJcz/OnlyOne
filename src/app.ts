@@ -75,7 +75,7 @@ class App extends events.EventEmitter {
 
 	/**处理客户端的请求消息 */
 	async handleClientMessage(session: WSSession, msg: IRequestMessage) {
-		console.log(`收到 ${session.userId} 的消息: ${JSON.stringify(msg)}`)
+		// console.log(`收到 ${session.userId} 的消息: ${JSON.stringify(msg)}`)
 		if (!msg.route) {
 			console.log(`消息 route=${msg.route} 路由无效, 未知消息不处理`)
 			if (msg.type === 'request') session.send(<IBasicMessage>{ type: 'response', code: 501, data: '服务器收到未知消息', requestId: msg.requestId })

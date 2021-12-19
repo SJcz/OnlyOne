@@ -1,5 +1,5 @@
 import App from '../app'
-import { IBasicMessage, IPushMessage, IRequestMessage, IRoomUserNum } from '../define/interface/common'
+import { IBasicMessage, IPushMessage, IRoomUserNum } from '../define/interface/common'
 import { ProcessMessageRoute } from '../define/interface/constant'
 import roomManager from '../manager/roomManager'
 

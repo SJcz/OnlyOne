@@ -3,6 +3,9 @@ import WSSession from '../connector/ws.session'
 import { RedisMessageRoute } from '../define/interface/constant'
 import roomManager from '../manager/roomManager'
 import { ChannelService } from '../service/channelService'
+import os from 'os'
+
+let startUsage = process.cpuUsage()
 
 class RoomHandler {
 	app: App;
@@ -19,7 +22,11 @@ class RoomHandler {
 		const channel = channelService.getChannel(room_id, true)
 		channel.add({ ...session.user, sessionId: session.id })
 		this.app.redisService.publish('channel', { route: RedisMessageRoute.ROOM_JOIN, data: { room_id, user: session.user } })
-		return { room_id, user: session.user }
+
+		return {
+			room_id,
+			user: session.user
+		}
 	}
 
 	leaveRoom({ room_id }: ILeaveRoomRequestBody, session: WSSession) {
@@ -31,8 +38,34 @@ class RoomHandler {
 		return 'ok'
 	}
 
-	getRoomAllUserNum({ room_id }: IGetRoomAllUserNumRequestBody) {
-		return roomManager.getRoomPropleNum(room_id)
+	getRoomInfo({ room_id }: IGetRoomAllUserNumRequestBody) {
+		const cpus = os.cpus()
+		const memoryUsage = process.memoryUsage()
+		const [heapTotal, heapUsed, rss] = [
+			memoryUsage.heapTotal / 1024 / 1024,
+			memoryUsage.heapUsed / 1024 / 1024,
+			memoryUsage.rss / 1024 / 1024
+		]
+		startUsage = process.cpuUsage(startUsage)
+		return {
+			room_user_count: roomManager.getRoomPropleNum(room_id),
+			system_info: {
+				process: {
+					worker_num: cpus.length - 1 <= 1 ? 1 : cpus.length - 1,
+					process_id: process.pid,
+					process_session_num: Object.values(this.app.clientSessionList).length,
+				},
+				memory: {
+					heapTotal: heapTotal.toFixed(2),
+					heapUsed: heapUsed.toFixed(2),
+					rss: rss.toFixed(2)
+				},
+				cpu_usage: {
+					user: (startUsage.user / 1000).toFixed(2),
+					system: (startUsage.system / 1000).toFixed(2),
+				}
+			}
+		}
 	}
 }
 
