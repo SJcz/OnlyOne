@@ -26,8 +26,7 @@ class Master {
 
 	startAllWorkers() {
 		const cpus = os.cpus()
-		// const minWorkerNum = cpus.length - 1 <= 1 ? 1 : cpus.length - 1
-		const minWorkerNum = 1
+		const minWorkerNum = cpus.length - 1 <= 1 ? 1 : cpus.length - 1
 		for (let i = 0; i < minWorkerNum; i++) {
 			this.createWorker()
 		}
