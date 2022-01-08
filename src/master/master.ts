@@ -4,6 +4,8 @@ import { IBasicMessage, IPushMessage, IRoomUserNum } from '../define/interface/c
 import { ProcessMessageRoute } from '../define/interface/constant'
 import roomManager from '../manager/roomManager'
 import HttpServer from './http-server'
+import log4js from 'log4js'
+const logger = log4js.getLogger()
 
 class Master {
 	httpServer!: HttpServer
@@ -24,7 +26,8 @@ class Master {
 
 	startAllWorkers() {
 		const cpus = os.cpus()
-		const minWorkerNum = cpus.length - 1 <= 1 ? 1 : cpus.length - 1
+		// const minWorkerNum = cpus.length - 1 <= 1 ? 1 : cpus.length - 1
+		const minWorkerNum = 1
 		for (let i = 0; i < minWorkerNum; i++) {
 			this.createWorker()
 		}
@@ -33,18 +36,18 @@ class Master {
 	createWorker() {
 		const worker = cluster.fork()
 		worker.on('exit', (code: number, signal: string) => {
-			console.log(`worker ${worker.id}, process ${worker.process.pid} exit. code=${code} signal=${signal}`)
+			logger.info(`worker ${worker.id}, process ${worker.process.pid} exit. code=${code} signal=${signal}`)
 			delete cluster.workers[worker.id]
 			this.createWorker()
 		})
 		worker.on('error', (error: Error) => {
-			console.log(`worker ${worker.id}, process ${worker.process.pid} error`)
-			console.error(error)
+			logger.info(`worker ${worker.id}, process ${worker.process.pid} error`)
+			logger.error(error)
 			delete cluster.workers[worker.id]
 			this.createWorker()
 		})
 		worker.on('disconnect', () => {
-			console.log(`worker ${worker.id}, process ${worker.process.pid} disconnect`)
+			logger.info(`worker ${worker.id}, process ${worker.process.pid} disconnect`)
 			delete cluster.workers[worker.id]
 			this.createWorker()
 		})
@@ -67,7 +70,7 @@ class Master {
 				}
 			}
 		})
-		console.log(`create worker ${worker.id}, process ${worker.process.pid} successfully!`)
+		logger.info(`create worker ${worker.id}, process ${worker.process.pid} successfully!`)
 	}
 
 	startHttpServer() {
@@ -80,22 +83,8 @@ class Master {
 	}
 
 	handlerPushMessage_NO_MATCH(pid: number, message: IPushMessage) {
-		console.error(`主进程 收到无法处理的子进程消息, route=${message.route}， 子进程PID=${pid}`)
+		logger.error(`主进程 收到无法处理的子进程消息, route=${message.route}， 子进程PID=${pid}`)
 	}
-
-	// requestChildProcess(worker: Worker, msg: IRequestMessage) {
-	// 	msg.requestId = ++this.requestIndex
-	// 	msg.type = 'request'
-	// 	const promise = new Promise((resolve, reject) => {
-	// 		this.pendingRequest[msg.requestId] = {
-	// 			_worker: worker,
-	// 			_resolve: resolve,
-	// 			_reject: reject
-	// 		}
-	// 	})
-	// 	worker.send(msg)
-	// 	return promise
-	// }
 }
 
 export default Master

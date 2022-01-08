@@ -33,7 +33,7 @@ let cur = 0
 
 const interval = setInterval(() => {
 	cur++
-	if (cur >= 3) {
+	if (cur >= 5) {
 		clearInterval(interval)
 	} else {
 		joinRoom(200 * (cur - 1), 200 * cur)

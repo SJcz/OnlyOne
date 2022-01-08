@@ -3,6 +3,8 @@ import WSSession from '../connector/ws.session'
 import { IRoomMessage } from '../define/interface/common'
 import { RedisMessageRoute } from '../define/interface/constant'
 import { ChannelService } from '../service/channelService'
+import log4js from 'log4js'
+const logger = log4js.getLogger()
 
 class ChatHandler {
 	app: App;
@@ -14,7 +16,7 @@ class ChatHandler {
 		const channelService = this.app.get('channelService') as ChannelService
 		const channel = channelService.getChannel(room_id)
 		if (!channel) {
-			console.log(`chatHandler.chat: 找不到room_id=${room_id} 对应的频道`)
+			logger.info(`chatHandler.chat: 找不到room_id=${room_id} 对应的频道`)
 			return 'fail'
 		}
 		this.app.redisService.publish('channel', {

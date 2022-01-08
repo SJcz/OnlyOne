@@ -2,6 +2,8 @@ import WebSocket from 'ws'
 import events from 'events'
 import WSSession from './ws.session'
 import { IStartOptions } from '../define/interface/common'
+import log4js from 'log4js'
+const logger = log4js.getLogger()
 
 let curIndex = 1
 
@@ -12,7 +14,7 @@ export default class WSConnector extends events.EventEmitter {
 	}
 	start(opts: IStartOptions) {
 		this.wss = new WebSocket.Server({ port: opts.port, maxPayload: 10 * 1024 }, () => {
-			console.log(`connector process ${process.pid} is running with 'WebSocket:${opts.port}'`)
+			logger.info(`connector process ${process.pid} is running with 'WebSocket:${opts.port}'`)
 		})
 		this._initEvents()
 	}

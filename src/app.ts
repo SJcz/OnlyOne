@@ -10,6 +10,8 @@ import initRedisService, { RedisService } from './service/redisService'
 import AppUtil from './util/appUtil'
 import initProcessService, { ProcessService } from './service/processService'
 import { getRandomAvatar } from './util/util'
+import log4js from 'log4js'
+const logger = log4js.getLogger()
 
 const chance = new Chance()
 
@@ -62,28 +64,30 @@ class App extends events.EventEmitter {
 		session.set('user', user)
 		session.on('message', this.handleClientMessage.bind(this, session))
 		session.on('error', (error) => {
-			console.error(error)
+			logger.error(error)
+			logger.info(`sessionId=${session.id} userId=${session.get('userId')} error: error=${error.message}`)
 			delete this.clientSessionList[session.id]
 			this.channelService.leave(session.userId)
 		})
 		session.on('close', (code: number, reason: string) => {
-			console.log(`sessionId=${session.id} closed: code=${code}, reason=${reason}`)
+			logger.info(`sessionId=${session.id} userId=${session.get('userId')} closed: code=${code}, reason=${reason}`)
 			delete this.clientSessionList[session.id]
 			this.channelService.leave(session.userId)
 		})
+		logger.info(`session=${session.id} userId=${session.get('userId')} 连接到进程 ${process.pid}`)
 	}
 
 	/**处理客户端的请求消息 */
 	async handleClientMessage(session: WSSession, msg: IRequestMessage) {
-		// console.log(`收到 ${session.userId} 的消息: ${JSON.stringify(msg)}`)
+		// logger.info(`收到 ${session.userId} 的消息: ${JSON.stringify(msg)}`)
 		if (!msg.route) {
-			console.log(`消息 route=${msg.route} 路由无效, 未知消息不处理`)
+			logger.info(`消息 route=${msg.route} 路由无效, 未知消息不处理`)
 			if (msg.type === 'request') session.send(<IBasicMessage>{ type: 'response', code: 501, data: '服务器收到未知消息', requestId: msg.requestId })
 			return
 		}
 		const [handlerName, method] = msg.route.split('.')
 		if (!this.handlerMap[handlerName] || typeof this.handlerMap[handlerName][method] !== 'function') {
-			console.log(`找不到 handlerName=${handlerName} method=${method} 来处理该消息`)
+			logger.info(`找不到 handlerName=${handlerName} method=${method} 来处理该消息`)
 			if (msg.type === 'request') session.send(<IBasicMessage>{ type: 'response', code: 404, data: '找不到对应的 handler', requestId: msg.requestId })
 			return
 		}
@@ -91,7 +95,7 @@ class App extends events.EventEmitter {
 			const result = await this.handlerMap[handlerName][method](msg.data || {}, session)
 			if (msg.type == 'request') return session.send(<IBasicMessage>{ type: 'response', code: 0, data: result, requestId: msg.requestId })
 		} catch (err) {
-			console.error(err)
+			logger.error(err)
 			if (msg.type == 'request') return session.send(<IBasicMessage>{ type: 'response', code: 500, data: '服务器错误', requestId: msg.requestId })
 		}
 	}

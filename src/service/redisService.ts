@@ -3,6 +3,8 @@ import App from '../app'
 import redis from 'redis'
 import { promisify } from 'util'
 import { IRedisChannelMessage } from '../define/interface/common'
+import log4js from 'log4js'
+const logger = log4js.getLogger()
 
 export class RedisService {
 	app: App;
@@ -33,7 +35,7 @@ export class RedisService {
 			if (category === 'channel') this.app.emit('channel', <IRedisChannelMessage>JSON.parse(message))
 		})
 		this.subscriber.on('error', (error) => {
-			console.error(error)
+			logger.error(error)
 		})
 	}
 

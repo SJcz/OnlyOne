@@ -1,0 +1,2 @@
+# server 启动命令
+run -d -p 9090:9090 -p 10010:10010 --link redis:redis --name onlyone_server_1.3.0 -v /data/docker/onlyone_server/avatars:/src/app/avatars 626040875/onlyone_server:1.3.0
