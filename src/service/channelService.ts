@@ -81,7 +81,7 @@ export class Channel {
 	/**频道内推送消息 */
 	pushMessage(msg: IPushMessage) {
 		msg.type = 'push'
-		const sessionList = this.__channelService__.app.clientSessionList
+		const sessionList = this.__channelService__.app.connector.clientSessionList
 		const sessions = Object.values(this.userList).map(item => sessionList[item.sessionId])
 		sessions.forEach(session => session.send(msg)) // 推送消息给用户
 	}

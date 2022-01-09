@@ -2,14 +2,11 @@ import events from 'events'
 import WebSocket from 'ws'
 import { IBasicMessage, IUser } from '../define/interface/common'
 
-const ST_INITED = 0
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const ST_CLOSED = 1
-
 export default class WSSession extends events.EventEmitter {
 	id: number;
-	socket: WebSocket;
-	state: number;
+	socket: WebSocket
+	/**socket 是否存活 */
+	isAlive: boolean
 
 	map: Map<string, unknown>;
 
@@ -17,7 +14,7 @@ export default class WSSession extends events.EventEmitter {
 		super()
 		this.id = id
 		this.socket = socket
-		this.state = ST_INITED
+		this.isAlive = true
 		this.map = new Map()
 		this._initEvents()
 	}
@@ -26,12 +23,32 @@ export default class WSSession extends events.EventEmitter {
 		this.socket.on('message', (message: Buffer | string) => {
 			this.emit('message', JSON.parse(message.toString()))
 		})
-		this.socket.on('close', this.emit.bind(this, 'close'))
-		this.socket.on('error', this.emit.bind(this, 'error'))
+		this.socket.on('close', (code: number, reason: string) => {
+			this.isAlive = false
+			this.emit('close', code, reason)
+		})
+		this.socket.on('error', (error: Error) => {
+			this.isAlive = false
+			this.emit('error', error)
+		})
+		this.socket.on('ping', (data: Buffer | string) => {
+			this.socket.pong(data)
+		})
+		this.socket.on('pong', () => {
+			this.isAlive = true
+		})
+	}
+
+	terminate() {
+		this.socket.terminate()
+	}
+
+	ping() {
+		this.socket.ping()
 	}
 
 	send(msg: IBasicMessage | string) {
-		if (this.state !== ST_INITED) return
+		if (!this.isAlive) return
 		if (typeof msg !== 'string') msg = JSON.stringify(msg)
 		this.socket.send(msg)
 	}

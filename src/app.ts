@@ -22,14 +22,10 @@ class App extends events.EventEmitter {
 	redisService!: RedisService;
 	processService!: ProcessService
 
-	clientSessionList!: { [sessionId: string]: WSSession };
-
 	start(opts: IStartOptions) {
 		opts = opts || {}
 		this.connector = this.getScoketConnector(opts)
 		this.connector.start(opts)
-
-		this.clientSessionList = {}
 
 		this.processService = initProcessService(this)
 		this.redisService = initRedisService(this)
@@ -51,7 +47,6 @@ class App extends events.EventEmitter {
 	}
 
 	async handleConnection(session: WSSession) {
-		this.clientSessionList[session.id] = session
 		// 因为不需要登录, 所以连接上直接给一个用户Id
 		const userId = v1()
 		const user: IUser = {
@@ -63,15 +58,7 @@ class App extends events.EventEmitter {
 		session.set('userId', userId)
 		session.set('user', user)
 		session.on('message', this.handleClientMessage.bind(this, session))
-		session.on('error', (error) => {
-			logger.error(error)
-			logger.info(`sessionId=${session.id} userId=${session.get('userId')} error: error=${error.message}`)
-			delete this.clientSessionList[session.id]
-			this.channelService.leave(session.userId)
-		})
-		session.on('close', (code: number, reason: string) => {
-			logger.info(`sessionId=${session.id} userId=${session.get('userId')} closed: code=${code}, reason=${reason}`)
-			delete this.clientSessionList[session.id]
+		session.on('connect-error', () => { // 自定义的错误事件
 			this.channelService.leave(session.userId)
 		})
 		logger.info(`session=${session.id} userId=${session.get('userId')} 连接到进程 ${process.pid}`)
@@ -107,16 +94,6 @@ class App extends events.EventEmitter {
 
 	_getDetaultScocketConnector() {
 		return new WSConnector()
-	}
-
-	get(key: 'channelService' | 'clientSessionList') {
-		switch (key) {
-			case 'channelService':
-			case 'clientSessionList':
-				return this[key]
-			default:
-				throw new Error(`app 不能获取 ${key}`)
-		}
 	}
 }
 

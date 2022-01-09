@@ -2,7 +2,6 @@ import App from '../app'
 import WSSession from '../connector/ws.session'
 import { RedisMessageRoute } from '../define/interface/constant'
 import roomManager from '../manager/roomManager'
-import { ChannelService } from '../service/channelService'
 import os from 'os'
 
 let startUsage = process.cpuUsage()
@@ -18,7 +17,7 @@ class RoomHandler {
 
 	joinRoom({ room_id }: IJoinRoomRequestBody, session: WSSession) {
 		if (room_id !== 'onlyOne') throw new Error('只能进入 onlyOne 房间')
-		const channelService = this.app.get('channelService') as ChannelService
+		const channelService = this.app.channelService
 		const channel = channelService.getChannel(room_id, true)
 		channel.add({ ...session.user, sessionId: session.id })
 		this.app.redisService.publish('channel', { route: RedisMessageRoute.ROOM_JOIN, data: { room_id, user: session.user } })
@@ -30,7 +29,7 @@ class RoomHandler {
 	}
 
 	leaveRoom({ room_id }: ILeaveRoomRequestBody, session: WSSession) {
-		const channelService = this.app.get('channelService') as ChannelService
+		const channelService = this.app.channelService
 		const channel = channelService.getChannel(room_id)
 		if (!channel) return
 		channel.leave(session.userId)
@@ -53,7 +52,7 @@ class RoomHandler {
 				process: {
 					worker_num: cpus.length - 1 <= 1 ? 1 : cpus.length - 1,
 					process_id: process.pid,
-					process_session_num: Object.values(this.app.clientSessionList).length,
+					process_session_num: Object.values(this.app.connector.clientSessionList).length,
 				},
 				memory: {
 					heapTotal: heapTotal.toFixed(2),

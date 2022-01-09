@@ -76,7 +76,7 @@ export class ProcessService {
 	}
 
 	_recordProcessMemory() {
-		const userIds = Object.values(this.app.clientSessionList).map(session => session.userId)
+		const userIds = Object.values(this.app.connector.clientSessionList).map(session => session.userId)
 		const memoryUsage = process.memoryUsage()
 		const [heapTotal, heapUsed, rss] = [Math.trunc(memoryUsage.heapTotal / 1024 / 1024), Math.trunc(memoryUsage.heapUsed / 1024 / 1024), Math.trunc(memoryUsage.rss / 1024 / 1024)]
 		Object.assign(this.memory, { heapTotal, heapUsed, rss })
