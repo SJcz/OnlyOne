@@ -1,7 +1,6 @@
 import fs from 'fs-extra'
-// const { createHmac } = import('crypto')
+import crypto = require('crypto')
 import { AVATAR_BASE_FOLDER } from '../define/interface/constant'
-
 
 /**获得一个随机头像 */
 export async function getRandomAvatar() {
@@ -10,6 +9,9 @@ export async function getRandomAvatar() {
 	return process.env.HTTP_DOMAIN + `/avatar/${files[index]}`
 }
 
-// export function decryptToken() {
-	
-// }
+export function decryptToken(token: string): string {
+	const decipher = crypto.createDecipheriv('aes-128-ecb', process.env.SECRET_KEY as string, '')
+	let decrypted = decipher.update(Buffer.from(token, 'base64').toString('hex'), 'hex', 'utf8')
+	decrypted += decipher.final('utf8')
+	return decrypted
+}

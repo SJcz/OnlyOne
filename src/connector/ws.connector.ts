@@ -4,6 +4,8 @@ import WSSession from './ws.session'
 import { IStartOptions } from '../define/interface/common'
 import log4js from 'log4js'
 import { IncomingMessage, OutgoingHttpHeaders } from 'http'
+import { decryptToken } from '../util/util'
+import querystring from 'querystring'
 const logger = log4js.getLogger()
 
 let curIndex = 1
@@ -18,6 +20,7 @@ export default class WSConnector extends events.EventEmitter {
 	start(opts: IStartOptions) {
 		this.wss = new WebSocket.Server({
 			port: opts.port, maxPayload: 10 * 1024,
+			path: '/websocket',
 			verifyClient: this.verifyClient
 		}, () => {
 			logger.info(`connector process ${process.pid} is running with 'WebSocket:${opts.port}'`)
@@ -45,7 +48,7 @@ export default class WSConnector extends events.EventEmitter {
 		})
 	}
 
-	verifyClient( info: { origin: string; secure: boolean; req: IncomingMessage },
+	verifyClient(info: { origin: string; secure: boolean; req: IncomingMessage },
 		callback: (res: boolean, code?: number, message?: string, headers?: OutgoingHttpHeaders) => void) {
 		// 验证 origin
 		if (process.env.VERIFY_ORIGINS && process.env.VERIFY_ORIGINS !== '*') {
@@ -54,10 +57,12 @@ export default class WSConnector extends events.EventEmitter {
 		}
 
 		// 验证 token
-		const token = info.req.headers['authorization']
-		
-		const verifyDomains = process.env.VERIFY_DOMAINS ? process.env.VERIFY_DOMAINS.split(',') : []
-		console.log(info.origin)
+		if (process.env.SECRET_KEY && process.env.SECRET_IV) {
+			const token = info.req.url?.split('=')[1] || ''
+			if (!verifyToken(token)) return callback(false, 0, 'TOKEN_VERIFY_FAIL', {})
+		}
+
+		callback(true)
 	}
 
 	close(cb?: () => void) {
@@ -75,6 +80,18 @@ export default class WSConnector extends events.EventEmitter {
 			}
 		}, 30000)
 	}
+}
+
+/**
+	 * 验证用于 webscoket 连接的 token 是否正确
+	 * 这里只是一个案例, 要求可以端用于验证的明文格式为 a|b|c
+	 * TODO 
+	 * @param token 
+	 */
+function verifyToken(token: string) {
+	const decrypted = decryptToken(token)
+	const arr = decrypted.split('|')
+	return arr.length === 3
 }
 
 
