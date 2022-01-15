@@ -3,9 +3,17 @@ import WS from 'ws'
 /**用于测试！！！！ */
 function joinRoom(min: number, max: number) {
 	for (let i = min; i < max; i++) {
-		const client = new WS('ws://localhost:9090')
+		const client = new WS('ws://150.158.173.31:9090')
 		let n = 1
+		client.on('error', (err) => {
+			console.log(err)
+			client.close()
+		})
+		client.on('close', (code, reason) => {
+			console.log(code, reason)
+		})
 		client.on('open', function open() {
+			console.log('connect')
 			client.send(JSON.stringify({
 				type: 'request',
 				route: 'roomHandler.joinRoom',
@@ -24,10 +32,12 @@ function joinRoom(min: number, max: number) {
 						}
 					}
 				}))
-			}, 5000)
+			}, 10000)
 		})
 	}
 }
+
+// joinRoom(1, 50)
 
 let cur = 0
 

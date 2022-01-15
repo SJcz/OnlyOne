@@ -1,7 +1,7 @@
 # Version 1.0.0
 FROM node:10.16.3
 
-MAINTAINER SJCZ "626040875@qq.com"
+LABEL SJCZ "626040875@qq.com"
 
 RUN mkdir -p /src/app
 WORKDIR /src/app

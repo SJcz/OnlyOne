@@ -1,5 +1,5 @@
 import fs from 'fs-extra'
-const { createHmac } = import('crypto')
+// const { createHmac } = import('crypto')
 import { AVATAR_BASE_FOLDER } from '../define/interface/constant'
 
 
@@ -10,6 +10,6 @@ export async function getRandomAvatar() {
 	return process.env.HTTP_DOMAIN + `/avatar/${files[index]}`
 }
 
-export function decryptToken() {
+// export function decryptToken() {
 	
-}
+// }
