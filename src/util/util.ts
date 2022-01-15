@@ -1,4 +1,5 @@
 import fs from 'fs-extra'
+const { createHmac } = import('crypto')
 import { AVATAR_BASE_FOLDER } from '../define/interface/constant'
 
 
@@ -7,4 +8,8 @@ export async function getRandomAvatar() {
 	const files = await fs.readdir(AVATAR_BASE_FOLDER)
 	const index = Math.floor(Math.random() * files.length)
 	return process.env.HTTP_DOMAIN + `/avatar/${files[index]}`
+}
+
+export function decryptToken() {
+	
 }
