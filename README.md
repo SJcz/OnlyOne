@@ -22,7 +22,7 @@ demo: http://150.158.173.31 (勿压)
 - websocket & cluster
 - redis
 
-## 模型图
+## 简易架构图
 ![image](https://user-images.githubusercontent.com/20878022/144744803-610525ca-d672-4a84-91e0-237dd5ed324d.png)
 解析:  
 - chat server 使用 cluster 创建多个连接子进程
@@ -34,6 +34,12 @@ npm i // 安装所依赖的模块
 
 npm run start // 启动项目
 ```
+
+## 项目运行截图
+![image](https://user-images.githubusercontent.com/20878022/149665069-cae593d2-753b-44a8-98b8-d983beba346d.png)
+![image](https://user-images.githubusercontent.com/20878022/149665076-9b02453a-0eea-4d36-bb14-06516bb77c0a.png)
+![image](https://user-images.githubusercontent.com/20878022/149665110-ef12e21d-c0e5-4fe6-ba04-753a9751d075.png)
+
 
 ## 项目依赖
 ### redis
