@@ -4,7 +4,7 @@
 demo: 开发中
 
 ## 介绍
-一个立志于实现超多用户同时在线和聊天的聊天室, 只有一个房间, 随时随地均可加入
+一个打算实现超多用户同时在线和聊天的聊天室, 只有一个房间, 随时随地均可加入
 
 ## 1.X 版本
 ### 功能点
@@ -12,6 +12,8 @@ demo: 开发中
 - [x] 用户 - 发送消息
 - [x] 用户 - 接收消息
 - [x] 用户 - 离开聊天室
+- [x] 消息 - 支持表情发送
+- [x] 连接 - websocket 连接验证
 
 ## 技术栈
 - ~~javascript~~ 
@@ -20,7 +22,7 @@ demo: 开发中
 - websocket & cluster
 - redis
 
-## 架构图
+## 模型图
 ![image](https://user-images.githubusercontent.com/20878022/144744803-610525ca-d672-4a84-91e0-237dd5ed324d.png)
 解析:  
 - chat server 使用 cluster 创建多个连接子进程
@@ -46,7 +48,7 @@ npm run start // 启动项目
 ## Docker
 若想使用 docker 部署项目, 需要先拉取项目的 docker 镜像
 ```
-docker pull 626040875/onlyone_server:1.1.0
+docker pull 626040875/onlyone_server:1.3.2
 ```
 然后拉取某版本的 redis 镜像
 ```
