@@ -5,7 +5,6 @@ import { IStartOptions } from '../define/interface/common'
 import log4js from 'log4js'
 import { IncomingMessage, OutgoingHttpHeaders } from 'http'
 import { decryptToken } from '../util/util'
-import querystring from 'querystring'
 const logger = log4js.getLogger()
 
 let curIndex = 1
@@ -53,13 +52,19 @@ export default class WSConnector extends events.EventEmitter {
 		// 验证 origin
 		if (process.env.VERIFY_ORIGINS && process.env.VERIFY_ORIGINS !== '*') {
 			const verifyOrigins = process.env.VERIFY_ORIGINS.split(',')
-			if (!verifyOrigins.find(item => item.search(info.origin) >= 0)) return callback(false, 0, 'ORIGIN_LIMIT', {})
+			if (!verifyOrigins.find(item => item.search(info.origin) >= 0)) {
+				logger.warn(`${info.origin} 不是合法的 origin, origin 验证失败, verifyOrigins=${verifyOrigins.join(',')}`)
+				return callback(false, 0, 'ORIGIN_LIMIT', {})
+			}
 		}
 
 		// 验证 token
-		if (process.env.SECRET_KEY && process.env.SECRET_IV) {
+		if (process.env.SECRET_KEY) {
 			const token = info.req.url?.split('=')[1] || ''
-			if (!verifyToken(token)) return callback(false, 0, 'TOKEN_VERIFY_FAIL', {})
+			if (!verifyToken(token)) {
+				logger.warn(`${token} 不是合法的 token, token 验证失败`)
+				return callback(false, 0, 'TOKEN_VERIFY_FAIL', {})
+			}
 		}
 
 		callback(true)
@@ -91,7 +96,12 @@ export default class WSConnector extends events.EventEmitter {
 function verifyToken(token: string) {
 	const decrypted = decryptToken(token)
 	const arr = decrypted.split('|')
-	return arr.length === 3
+	if (Date.now() - +arr[2] <= 24 * 60 * 60 * 1000 ||
+		+arr[2] - Date.now() <= 24 * 60 * 60 * 1000) {
+		return arr.length === 3
+	}
+	return false
+
 }
 
 
