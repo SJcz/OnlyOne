@@ -4,7 +4,7 @@ import WSSession from './ws.session'
 import { IStartOptions } from '../define/interface/common'
 import log4js from 'log4js'
 import { IncomingMessage, OutgoingHttpHeaders } from 'http'
-import { decryptToken } from '../util/util'
+import { verifyToken } from '../util/util'
 const logger = log4js.getLogger()
 
 let curIndex = 1
@@ -85,23 +85,6 @@ export default class WSConnector extends events.EventEmitter {
 			}
 		}, 30000)
 	}
-}
-
-/**
-	 * 验证用于 webscoket 连接的 token 是否正确
-	 * 这里只是一个案例, 要求可以端用于验证的明文格式为 a|b|c
-	 * TODO 
-	 * @param token 
-	 */
-function verifyToken(token: string) {
-	const decrypted = decryptToken(token)
-	const arr = decrypted.split('|')
-	if (Date.now() - +arr[2] <= 24 * 60 * 60 * 1000 ||
-		+arr[2] - Date.now() <= 24 * 60 * 60 * 1000) {
-		return arr.length === 3
-	}
-	return false
-
 }
 
 
