@@ -8,8 +8,8 @@ const logger = log4js.getLogger()
 
 // COS配置参数
 const config = {
-	secretId: 'AKIDNaXDckbFdkZ8QQ9colRqypPhiSv72g39',
-	secretKey: 'qPhiSv72g39yVmmUv5yavznKaYGhvsYx',
+	secretId: process.env.COS_SECRET_ID || '',
+	secretKey: process.env.COS_SECRET_KEY || '',
 	proxy: '',
 	durationSeconds: 7200,
 
